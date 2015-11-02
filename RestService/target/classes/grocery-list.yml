@@ -1,0 +1,26 @@
+server:
+
+   type: simple
+   applicationContextPath: /sandbox/api
+   connector:
+     type: http
+     port: 8080
+
+database:
+
+  # the name of your JDBC driver
+  driverClass: com.mysql.jdbc.Driver
+
+  # the username
+  user: credentialuser
+
+  # the password
+  password: dxbcamel
+
+  # the JDBC URL
+  url: jdbc:mysql://10.55.34.201/sandbox
+
+  # any properties specific to your JDBC driver:
+  properties:
+    charSet: UTF-8
+    hibernate.dialect: org.hibernate.dialect.MySQL5InnoDBDialect

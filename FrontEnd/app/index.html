@@ -4,29 +4,82 @@
     <title>Grocery List</title>
 
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
     <script src="app.js"></script>
+    <style>
+        .strike {
+            text-decoration: line-through;
+        }
+    </style>
 </head>
-<body>
-    <div>
-        <h1>Grocery List</h1>
-        <div class="well" style="width:400px" ng-controller="GroceryListController as groceryList">
-            <span>{{groceryList.remaining()}} of {{groceryList.items.length}} remaining</span>
-            [ <a href="" ng-click="groceryList.archive()">archive</a> ]
-            <ul class="unstyled">
-                <li ng-repeat="item in groceryList.items">
-                    <input type="checkbox" ng-model="item.done">
-                    <span class="done-{{item.done}}">{{item.text}}</span>
-                </li>
-            </ul>
-            <form ng-submit="groceryList.addItem()">
-                <input type="text" ng-model="groceryList.itemText" size="30"
-                       placeholder="add new grocery item">
-                <input type="text" ng-model="groceryList.itemQuantity" size="10"
-                       placeholder="quantity">
-                <input class="btn btn-primary" type="submit" value="add">
-            </form>
-        </div>
+<body style="float:left; margin:20px">
+    <div ng-controller="GroceryListController">
+        <table>
+            <tr>
+                <td style="width:470px">
+                    <div class="well" style="height:700px;position:relative">
+                    <h1>Grocery List</h1>
+                    <form id="newList" class="form-inline" ng-submit="addGroceryList(listName)">
+                        <input class="form-control" style="width:220px" type="text" placeholder="Enter name of grocery list" ng-model="listName">
+                        <button type="submit" class="btn btn-default">Submit</button>
+                    </form>
+                    <br>
+                    <select ng-options="list.name for list in main.lists" ng-model="main.selectedList" style="width:200px" ng-change="genOpenPurchases()">
+                    </select>
+                    <button type="button" class="btn btn-default" ng-click="removeGroceryList(main.selectedList.id)" data-toggle="tooltip" data-placement="right" title="Done with grocery list"><span class="glyphicon glyphicon-ok"></span></button>
+                    <br><br>
+                    <span ng-show="main.selectedList != null">{{remaining(main.selectedList.purchases)}} of {{main.selectedList.purchases.length}} remaining
+                    [ <a href="" ng-click="archive(list)">archive</a> ]</span>
+                    <ul class="list-group">
+                        <span ng-repeat="purchase in main.selectedList.purchases">
+                            <div ng-hide="openPurchases[$index]"><a href="#" style="height:45px; width:80%; display:inline-block;" class="list-group-item" ng-class="{strike: item.done}"
+                            ng-click="checkPurhcase(purchase.name, purchase.quantity, purchase.measurement, purchase.id, purchase.done)">
+                                {{purchase.quantity}} {{purchase.measurement}} of {{purchase.name}}
+                            </a>
+                            <button style="display:inline-block" type="button" ng-click="openItems[$index] = true" class="btn btn-default"><span class="glyphicon glyphicon-pencil"></span></button></div>
+                            <li class="list-group-item" ng-show="openItems[$index]" style="height:47px; width:80%; display:inline-block">
+                                <form class="form-inline" ng-submit="changeItem(itemName, itemQuantity, itemMeasurement, item.id, item.done)">
+                                    <input class="form-control input-sm" style="width:80px" type="text" placeholder="Item" ng-model="itemName" ng-init="itemName = item.name">
+                                    <input class="form-control input-sm" style="width:60px" type="text" placeholder="Qt." ng-model="itemQuantity" ng-init="itemQuantity = item.quantity">
+                                    <input class="form-control input-sm" style="width:70px" type="text" placeholder="Meas." ng-model="itemMeasurement" ng-init="itemMeasurement = item.measurement">
+                                    <button style="display:inline-block; position:relative; left:110px" type="submit" ng-click="openItems[$index] = false" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button>
+                                </form>
+                            </li>
+                        </span>
+                    </ul>
+                    <form id="newItem" class="form-inline" ng-submit="addPurchase(purchaseName, purchaseQuantity, purchaseMeasurement)" style="position:absolute;bottom:10px">
+                        <input class="form-control" style="width:130px" type="text" placeholder="Enter new item" ng-model="purchaseName">
+                        <input class="form-control" style="width:80px" type="text" placeholder="Quantity" ng-model="purchaseQuantity">
+                        <input class="form-control" style="width:120px" type="text" placeholder="Measurement" ng-model="purchaseMeasurement">
+                        <button type="submit" class="btn btn-default">Add</button>
+                    </form></div>
+                    <div id="alert"></div>
+                </td>
+                <td style="vertical-align: text-top">
+                    <button type="button" class="btn btn-default glyphicon glyphicon-plus" ng-click="display()" ng-hide="displayList"></button>
+                    <div class="well" ng-show="displayList">
+                        <button type="button" class="btn btn-default glyphicon glyphicon-minus" ng-click="display()" ng-show="displayList"></button>
+                        <h2>Grocery Stores</h2>
+                        <form class="form-inline" ng-submit="addGroceryStore(storeName)">
+                            <input class="form-control" style="width:220px" type="text" placeholder="Enter name of grocery store" ng-model="storeName">
+                            <button type="submit" class="btn btn-default">Submit</button>
+                        </form><br>
+                        <select ng-options="store.name for store in main.stores" ng-model="main.selectedStore" style="width:200px"></select>
+                        <ul class="list-group">
+                            <span ng-repeat="item in main.selectedStore.items">
+                                <a href="#" style="height:45px; width:80%; display:inline-block;" class="list-group-item">
+                                    {{item.name}}
+                                </a>
+                            </span>
+                        </ul>
+                        <select ng-options="item.name for item in main.items" ng-model="main.selectedItem" style="width:200px"></select>
+                        <button class="btn btn-default" ng-click="addStoreItem(main.selectedStore.id, main.selectedItem.id, main.selectedItem.name)">Add</button>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 </html>
